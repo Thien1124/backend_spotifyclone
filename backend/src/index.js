@@ -13,6 +13,9 @@ import albumRoutes from './routes/album.route.js';
 import statsRoutes from './routes/stat.route.js';
 import { createServer } from 'http';
 import { initializeSocket } from './lib/socket.js';
+import dns from 'node:dns';
+
+dns.setServers(['1.1.1.1', '1.0.0.1']);
 
 dotenv.config();
 

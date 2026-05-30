@@ -1,7 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { connectDB } from './lib/db.js';
-import { cleakMiddleware } from '@cleak/express';
+import { clerkMiddleware } from '@clerk/express';
 import fileUpload from 'express-fileupload';
 import path from 'path';
 
@@ -11,6 +11,8 @@ import adminRoutes from './routes/admin.route.js';
 import songRoutes from './routes/song.route.js';
 import albumRoutes from './routes/album.route.js';
 import statsRoutes from './routes/stat.route.js';
+import { createServer } from 'http';
+import { initializeSocket } from './lib/socket.js';
 
 dotenv.config();
 
@@ -18,8 +20,11 @@ const app = express();
 const __dirname = path.resolve();
 const PORT = process.env.PORT || 3000;
 
+const httpServer = createServer(app); // Tạo HTTP server từ Express app
+initializeSocket(httpServer); // Khởi tạo Socket
+
 app.use(express.json());
-app.use(cleakMiddleware()); // se them auth den to req obj => req.auth
+app.use(clerkMiddleware()); // se them auth den to req obj => req.auth
 app.use(fileUpload({
     useTempFiles: true,
     tempFileDir: path.join(__dirname, 'tmp'),
@@ -41,7 +46,10 @@ app.use("/api/stats", statsRoutes);
 app.use((err, req, res, next) => {
     res.status(500).json({message: process.env.NODE_ENV === "production" ? err.message : "Internal Server Error"});
 })
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log('Server is running on port ' + PORT);
   connectDB();
 });
+
+// socket.io
+

@@ -1,22 +1,22 @@
 import { Song } from "../models/song.model.js";
 import { Album } from "../models/album.model.js";
-import cloudinary from '../lib/cloudinary.js';
+import cloudinary from "../lib/cloudinary.js";
 //func upload file len cloudinary
 const uploadToCloudinary = async (file) => {
     try {
         const result = await cloudinary.uploader.upload(file.tempFilePath, {
             resource_type: "auto",
+        });
+        return result.secure_url;
+    } catch (error) {
+        console.log("Loi upload len cloudinary", error);
+        throw new Error("Failed to upload file to Cloudinary");
     }
-);
-    return result.secure_url;
-}   catch (error) {
-    console.log("Loi upload len cloudinary", error);
-    throw new Error("Failed to upload file to Cloudinary");
-}
 };
-export const createSong = async(req, res, next) => {
+
+export const createSong = async (req, res, next) => {
     try {
-        if (!req.files || !req.files.audio) {
+        if (!req.files || !req.files.audioFile || !req.files.imageFile) {
             return res.status(400).json({ message: "Can upload tat ca file" });
         }
         const { title, artist, albumId, duration } = req.body;
@@ -29,21 +29,21 @@ export const createSong = async(req, res, next) => {
         const song = new Song({
             title,
             artist,
-            albumUrl,
+            audioUrl,
             imageUrl,
             duration,
-            album: albumId || null
-        })
+            albumID: albumId || null,
+        });
          
         await song.save();
 // neu bai hat thuoc ve 1 album, thi se cap nhat vao album do 
-        if(albumId){
+        if (albumId) {
             await Album.findByIdAndUpdate(albumId, {
                 $push: { songs: song._id },
             });
-    }
-    res.status(201).json({ message: "Tao thanh cong", song });
-} catch (error) {
+        }
+        res.status(201).json({ message: "Tao thanh cong", song });
+    } catch (error) {
         console.error(error);
         next(error);
     }
@@ -55,10 +55,10 @@ export const deleteSong = async (req, res, next) => {
 
         const song = await Song.findById(id)
 
-        if(song.albumId){
-            await Album.findByIdAndUpdate(song.albumId, {
+        if (song?.albumID) {
+            await Album.findByIdAndUpdate(song.albumID, {
                 $pull: { songs: song._id },
-            })
+            });
         }
         await Song.findByIdAndDelete(id);
 
@@ -94,7 +94,7 @@ export const createAlbum = async (req, res, next) => {
 export const deleteAlbum = async (req, res, next) => {
     try {
         const { id } = req.params;
-        await Song.deleteMany({ albumId: id });
+        await Song.deleteMany({ albumID: id });
         await Album.findByIdAndDelete(id);
         res.status(200).json({ message: "Xoa album thanh cong" });
     } catch (error) {

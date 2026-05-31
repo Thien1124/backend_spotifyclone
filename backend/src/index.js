@@ -13,6 +13,10 @@ import albumRoutes from './routes/album.route.js';
 import statsRoutes from './routes/stat.route.js';
 import { createServer } from 'http';
 import { initializeSocket } from './lib/socket.js';
+import cors from 'cors';
+import dns from 'node:dns'
+
+dns.setServers(['1.1.1.1', '1.0.0.1'])
 
 dotenv.config();
 
@@ -23,16 +27,24 @@ const PORT = process.env.PORT || 3000;
 const httpServer = createServer(app); // Tạo HTTP server từ Express app
 initializeSocket(httpServer); // Khởi tạo Socket
 
-app.use(express.json());
-app.use(clerkMiddleware()); // se them auth den to req obj => req.auth
-app.use(fileUpload({
-    useTempFiles: true,
-    tempFileDir: path.join(__dirname, 'tmp'),
-    createParentPath: true,
-    limit:{
-        fileSize : 10 * 1024 * 1024, // 10MB file toi da
-    },
-})
+app.use(
+	cors({
+		origin: "http://localhost:3000",
+		credentials: true,
+	})
+);
+
+app.use(express.json()); // to parse req.body
+app.use(clerkMiddleware()); // this will add auth to req obj => req.auth
+app.use(
+	fileUpload({
+		useTempFiles: true,
+		tempFileDir: path.join(__dirname, "tmp"),
+		createParentPath: true,
+		limits: {
+			fileSize: 10 * 1024 * 1024, // 10MB  max file size
+		},
+	})
 );
 
 app.use("/api/users", userRoutes);

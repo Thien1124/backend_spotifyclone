@@ -32,7 +32,7 @@ export const getFeaturedSongs = async (req, res, next) => {
     }
 };
 
-export const getMakeForYouSongs = async (req, res, next) => {
+export const getMadeForYouSongs = async (req, res, next) => {
    try {
         const songs = await Song.aggregate([
             {   $sample: { size: 4 } 

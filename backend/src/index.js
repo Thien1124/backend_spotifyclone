@@ -20,11 +20,6 @@ dns.setServers(['1.1.1.1', '1.0.0.1'])
 
 dotenv.config();
 
-console.log(
-  'Check Clerk Key:',
-  process.env.CLERK_SECRET_KEY ? 'ĐÃ CÓ KEY' : 'BỊ THIẾU KEY!!!'
-)
-
 const app = express();
 const __dirname = path.resolve();
 const PORT = process.env.PORT || 3000;

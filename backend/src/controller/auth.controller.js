@@ -11,7 +11,7 @@ export const authCallback = async (req, res, next) => {
       // Phải ghi đúng tên trường là clerkId để khớp với lệnh tìm kiếm getAllUsers
       user = await User.create({
         clerkId: id,
-        fullname: `${firstName || ''} ${lastName || ''}`.trim(),
+        fullName: `${firstName || ''} ${lastName || ''}`.trim(),
         imageUrl
       })
     }

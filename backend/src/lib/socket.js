@@ -1,62 +1,73 @@
-import { Server } from "socket.io";
-import { Message } from "../models/message.model.js";
+import { Server } from 'socket.io'
+import { Message } from '../models/message.model.js'
 
-export const initializeSocket = (httpServer) => {
-    const io = new Server(httpServer, {
-        cors: {
-            origin: "http://localhost:3000",
-            credentials: true,
-        },
-    });
-    const userSockets = new Map(); // Map để lưu trữ userId và socketId
-    const userActivities = new Map(); // Map để lưu trữ userId và thời gian hoạt động cuối cùng
+export const initializeSocket = (server) => {
+  const io = new Server(server, {
+    cors: {
+      origin: 'http://localhost:3000',
+      credentials: true
+    }
+  })
 
-    io.on("connection", (socket) => {
-        socket.on("user da ket noi", (userId) => {
-            userSockets.set(userId, socket.id);
-            userActivities.set(userId, "Idle");
-            // Lắng nghe sự kiện "user da ket noi" từ client và lưu trữ userId và socketId
-            io.emit("user da ket noi", userId);
-            socket.emit("user da online", Array.from(userSockets.keys()));
-            io.emit("cac hoat dong", Array.from(userSockets.entries()));
-        });
-        socket.on("cap nhat hoat dong", ({ userId, activity }) => {
-            console.log("cap nhat hoat dong", userId, activity);
-            userActivities.set(userId, activity);
-            io.emit("cac hoat dong da duoc cap nhat", userId, activity);
-        });
-        socket.on("gui tin nhan", async (data) => {
-            try {
-                const { senderId, receiverId, content } = data;
-                const message = await Message.create({
-                    senderId,
-                    receiverId,
-                    content,
-                });
-                const receiverSocketId = userSockets.get(receiverId);
-                if (receiverSocketId) {
-                    io.to(receiverSocketId).emit("nhan tin nhan", message);
-                }
-                socket.emit("gui tin nhan thanh cong", message);
-            } catch (error) {
-                console.error("Lỗi khi gửi tin nhắn:", error);
-                socket.emit("gui tin nhan that bai", { error: "Failed to send message" });
-            }
-        });
-        socket.on("ngat ket noi", () => {
-            let disconnectedUserId;
-            for (const [userId, socketId] of userSockets.entries()) {
-                if (socketId === socket.id) {
-                    disconnectedUserId = userId;
-                    userSockets.delete(userId);
-                    userActivities.delete(userId);
-                    break;
-                }
-            }
-            if (disconnectedUserId) {
-                io.emit("user da ngat ket noi", disconnectedUserId);
-            }
-        });
-    });
-    return io;
-};
+  const userSockets = new Map() // { userId: socketId}
+  const userActivities = new Map() // {userId: activity}
+
+  io.on('connection', (socket) => {
+    socket.on('user_connected', (userId) => {
+      userSockets.set(userId, socket.id)
+      userActivities.set(userId, 'Idle')
+
+      // broadcast to all connected sockets that this user just logged in
+      io.emit('user_connected', userId)
+
+      socket.emit('users_online', Array.from(userSockets.keys()))
+
+      io.emit('activities', Array.from(userActivities.entries()))
+    })
+
+    socket.on('update_activity', ({ userId, activity }) => {
+      // console.log('activity updated', userId, activity)
+      userActivities.set(userId, activity)
+      io.emit('activity_updated', { userId, activity })
+    })
+
+    socket.on('send_message', async (data) => {
+      try {
+        const { senderId, receiverId, content } = data
+
+        const message = await Message.create({
+          senderId,
+          receiverId,
+          content
+        })
+
+        // send to receiver in realtime, if they're online
+        const receiverSocketId = userSockets.get(receiverId)
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit('receive_message', message)
+        }
+
+        socket.emit('message_sent', message)
+      } catch (error) {
+        console.error('Message error:', error)
+        socket.emit('message_error', error.message)
+      }
+    })
+
+    socket.on('disconnect', () => {
+      let disconnectedUserId
+      for (const [userId, socketId] of userSockets.entries()) {
+        // find disconnected user
+        if (socketId === socket.id) {
+          disconnectedUserId = userId
+          userSockets.delete(userId)
+          userActivities.delete(userId)
+          break
+        }
+      }
+      if (disconnectedUserId) {
+        io.emit('user_disconnected', disconnectedUserId)
+      }
+    })
+  })
+}

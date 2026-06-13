@@ -10,7 +10,7 @@ const uploadToCloudinary = async (file) => {
     })
     return result.secure_url
   } catch (error) {
-    console.log('Loi upload len cloudinary', error)
+    // console.log('Loi upload len cloudinary', error)
     throw new Error('Failed to upload file to Cloudinary')
   }
 }
@@ -65,7 +65,7 @@ export const deleteSong = async (req, res, next) => {
 
     res.status(200).json({ message: 'Xoa thanh cong' })
   } catch (error) {
-    console.log('Loi khi xoa bai hat', error)
+    // console.log('Loi khi xoa bai hat', error)
     next(error)
   }
 }
@@ -86,7 +86,7 @@ export const createAlbum = async (req, res, next) => {
 
     res.status(201).json({ message: 'Tao album thanh cong', album })
   } catch (error) {
-    console.log('Loi khi tao album', error)
+    // console.log('Loi khi tao album', error)
     next(error)
   }
 }
@@ -97,7 +97,7 @@ export const deleteAlbum = async (req, res, next) => {
     await Album.findByIdAndDelete(id)
     res.status(200).json({ message: 'Xoa album thanh cong' })
   } catch (error) {
-    console.log('Loi khi xoa album', error)
+    // console.log('Loi khi xoa album', error)
     next(error)
   }
 }

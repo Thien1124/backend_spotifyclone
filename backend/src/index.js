@@ -72,10 +72,17 @@ app.use('/api/songs', songRoutes)
 app.use('/api/albums', albumRoutes)
 app.use('/api/stats', statsRoutes)
 
+// ĐOẠN CODE MỚI (BỎ HOÀN TOÀN CHUỖI ĐỊNH TUYẾN PHÍA TRƯỚC):
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')))
-  app.get('(.*)', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'))
+  
+  // Sử dụng app.use không truyền path string để bỏ qua bộ parse lỗi
+  app.use((req, res, next) => {
+    // Chỉ can thiệp vào các request chuyển trang (GET), không chặn các phương thức khác
+    if (req.method === 'GET' && !req.url.startsWith('/api')) {
+      return res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'))
+    }
+    next()
   })
 }
 
